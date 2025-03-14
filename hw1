@@ -1,0 +1,107 @@
+import pandas as pd
+import numpy as np
+
+temp = pd.Series([781, 650, 705, 406, 580, 450, 550, 640])
+temp.index = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']
+
+#1
+filtered_temp = temp.loc[(temp > 500) & (temp < 700)]
+print(filtered_temp)
+
+#%%
+import pandas as pd
+import numpy as np
+
+temp = pd.Series([781, 650, 705, 406, 580, 450, 550, 640])
+temp.index = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']
+
+#2
+over_b = temp.loc['B']
+filtered_temp = temp.loc[temp > over_b]
+print(filtered_temp)
+#%%
+import pandas as pd
+import numpy as np
+
+temp = pd.Series([781, 650, 705, 406, 580, 450, 550, 640])
+temp.index = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']
+
+#3
+filtered_temp = temp.loc[temp < 600].index
+print(filtered_temp)
+
+#%%
+import pandas as pd
+import numpy as np
+
+temp = pd.Series([781, 650, 705, 406, 580, 450, 550, 640])
+temp.index = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']
+
+#4
+filtered_temp = temp.loc[temp < 600]*1.2
+print(filtered_temp)
+
+#%%
+import pandas as pd
+import numpy as np
+
+temp = pd.Series([781, 650, 705, 406, 580, 450, 550, 640])
+temp.index = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']
+
+#5
+a = temp.mean()
+b = temp.sum()
+c = temp.std()
+
+print(f"mean = {a}, sum = {b}, std = {c:.2f}")
+
+#%%
+import pandas as pd
+import numpy as np
+
+temp = pd.Series([781, 650, 705, 406, 580, 450, 550, 640])
+temp.index = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']
+
+#6
+temp.loc['A'] = 810
+temp.iloc[2] = 820
+
+print(temp)
+
+#%%
+import pandas as pd
+import numpy as np
+
+sales = pd.Series([781, 650, 705, 406, 580, 450, 550, 640])
+sales.index = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']
+
+#7
+sales.loc['J'] = 400
+print(sales)
+
+#%%
+import pandas as pd
+import numpy as np
+
+sales = pd.Series([781, 650, 705, 406, 580, 450, 550, 640])
+sales.index = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']
+
+#8
+sales.loc['J'] = 400
+
+sales.drop('J',inplace = True)
+print(sales)
+
+#%%
+import pandas as pd
+import numpy as np
+
+sales = pd.Series([781, 650, 705, 406, 580, 450, 550, 640])
+sales.index = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']
+
+#9
+sales2 = sales.copy()
+sales2 += 500
+
+print("sales\n", sales)
+print("\nsales2\n",sales2)
