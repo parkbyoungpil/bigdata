@@ -10,3 +10,21 @@ df.shape[1]
 print(df.head())
 a = df['Species'].unique()
 df.loc[:, ~df.columns.isin(['Species'])]
+
+
+#%%
+import pandas as pd
+import numpy as np
+
+df = pd.read_csv(r"C:\Users\user\Downloads\dfdata\iris.csv")
+print(df.head())
+a = df['Species'].unique()
+df.loc[:, ~df.columns.isin(['Species'])]
+#%%
+import pandas as pd
+import numpy as np
+
+exam_csv = pd.read_csv(r"C:\Users\user\Downloads\dfdata\exam.csv")
+df1 = exam_csv.sort_values(by = 'math', ascending = False) \
+    .head()
+print(df1.head())
