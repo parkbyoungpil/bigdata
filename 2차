@@ -28,3 +28,5 @@ exam_csv = pd.read_csv(r"C:\Users\user\Downloads\dfdata\exam.csv")
 df1 = exam_csv.sort_values(by = 'math', ascending = False) \
     .head()
 print(df1.head())
+#새로운 열 추가
+exam_csv['test'] = np.where(exam_csv['math'] >= 60, '합격', '탈락')
