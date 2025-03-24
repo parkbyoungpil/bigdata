@@ -10,3 +10,34 @@ mpg.query('category == "suv"')\
     .agg(mean_tot = ('total','mean'))\
     .sort_values('mean_tot', ascending = False)\
     .head()
+
+
+#%%
+import pandas as pd
+import numpy as np
+
+mpg = pd.read_excel(r"C:\Users\user\Downloads\dfdata\mpg.xlsx")
+
+# #Q1
+# mpg.groupby('category')\
+#     .agg(m_cty = ('cty', 'mean'))
+
+# mpg.query('category == "suv"')\
+#     .assign(total = (mpg['hwy']+mpg['cty'] )/2)\
+#     .groupby('manufacturer')\
+#     .agg(mean_tot = ('total','mean'))\
+#     .sort_values('mean_tot', ascending = False)\
+#     .head()
+
+# #Q2
+# mpg.groupby('category')\
+#     .agg(mean_cty = ('cty','mean'))\
+#     .sort_values(by = 'mean_cty' , ascending=False)
+#     #sort_values 오름차순은 꼭 by로 정해줘야하고 ascending = False 하면 내림차순 돼
+
+#Q3
+
+mpg.groupby('category')\
+    .agg(mean_hwy = ('hwy', 'mean'))\
+    .sort_values(by = 'mean_hwy', ascending = False)\
+    .head(3)
