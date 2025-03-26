@@ -10,5 +10,10 @@ cl.plot.barh(ylabel = 'category',
             rot = 0)
 plt.show()
 
+#소숫점 조절은 autopct 순서는 sorting 된 순서대로
+cl.plot.pie(ylabel ='',
+            autopct = '%1.0f%%',
+            title = 'Favorite Season')
+plt.show()
 
 
