@@ -16,4 +16,13 @@ cl.plot.pie(ylabel ='',
             title = 'Favorite Season')
 plt.show()
 
+#%%
+import matplotlib.pyplot as plt
 
+titanic = pd.read_csv(r"C:\Users\user\Downloads\dfdata\titanic.csv")
+
+t=titanic.dropna(subset = 'age', axis = 0)
+t['age'].plot.hist(ylabel="Frequency")
+plt.show()
+# #다나오게 함
+# t['age'].describe()
