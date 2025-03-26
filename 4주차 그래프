@@ -26,3 +26,8 @@ t['age'].plot.hist(ylabel="Frequency")
 plt.show()
 # #다나오게 함
 # t['age'].describe()
+
+#show를 하기 전까지 계속 그래프 만들면 같이 만들어짐, alpha 는 투명도인데 겹쳐서 안보이는거 보이게해줌!!
+t.query('sex=="male"')['age'].plot.hist(ylabel = "man",alpha=0.5)
+t.query('sex=="female"')['age'].plot.hist(ylabel="woman",alpha=0.5)
+plt.show()
