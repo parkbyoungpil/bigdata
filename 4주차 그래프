@@ -1,0 +1,14 @@
+#%%
+import pandas as pd
+import matplotlib.pyplot as plt
+
+mpg = pd.read_excel(r"C:\Users\user\Downloads\dfdata\mpg.xlsx")
+
+cl = mpg['category'].value_counts().head(5)
+#rot=0 하면 글자 가로로 나올 수 있음, .bar하면 세로 그래프 .barh 하면 가로 그래프 나옴
+cl.plot.barh(ylabel = 'category',
+            rot = 0)
+plt.show()
+
+
+
