@@ -1,0 +1,16 @@
+#%%
+import pandas as pd
+import matplotlib.pyplot as plt
+
+df = pd.read_csv(r"C:\Users\user\Downloads\mtcars.csv")
+df
+
+df.plot.scatter(x='wt', y = 'mpg')
+plt.show()
+
+df.plot.scatter(x = 'wt',
+                y = 'mpg',
+                d = 50,
+                c = 'red',
+                marker = 's')
+plt.show()
