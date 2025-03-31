@@ -18,3 +18,35 @@ fd.plot.barh(ax=axes[1,1])
 fig.suptitle('Multiple Graph Example', fontsize = 14)
 
 plt.show()
+
+#심화버전
+#%%
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns  # Seaborn 추가
+
+df = pd.read_csv(r"C:\Users\user\Downloads\dfdata\iris.csv")
+
+fig, axes = plt.subplots(nrows=2, ncols=2, figsize=(10, 8))  # figsize로 크기 조정
+
+# 히스토그램 + KDE
+sns.histplot(df['Petal_Length'], kde=True, ax=axes[0, 0], color='skyblue')
+axes[0, 0].set_title('Petal Length Histogram with KDE')
+
+# 박스플롯
+df['Petal_Length'].plot.box(ax=axes[0, 1])
+axes[0, 1].set_title('Petal Length Boxplot')
+
+# 파이차트
+fd = df['Species'].value_counts()
+fd.plot.pie(ax=axes[1, 0], autopct='%1.1f%%')  # 퍼센트 표시 추가
+axes[1, 0].set_ylabel('')
+axes[1, 0].set_title('Species Distribution (Pie)')
+
+# 수평 막대그래프
+fd.plot.barh(ax=axes[1, 1], color='lightgreen')
+axes[1, 1].set_title('Species Count (Barh)')
+
+fig.suptitle('Multiple Graph Example with KDE', fontsize=14)
+plt.tight_layout(rect=[0, 0, 1, 0.96])  # 제목과 겹치지 않게 여백 조정
+plt.show()
