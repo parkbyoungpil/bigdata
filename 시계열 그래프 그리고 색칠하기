@@ -1,0 +1,71 @@
+
+
+#%% time_series2.csv데이터 프레임 설정하기
+from dateutil.parser import parse
+import matplotlib as mpl
+import matplotlib.pyplot as plt
+import seaborn as sns
+import numpy as np
+import pandas as pd
+
+df = pd.read_csv(r"C:\Users\user\Downloads\time_series2.csv",parse_dates=['date'],
+                 index_col='date')
+df.reset_index(inplace=True)
+
+df['year']=[d.year for d in df.date]
+df['month']=[d.strftime('%b') for d in df.date]
+df.info()
+years=df['year'].unique()
+m=['Jan','Feb','Mar','Apr','May','Jun','Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+# df['month']= pd.Categorical(df['month'],category# m리스트 순서대로 카테고리 만들기
+
+
+np.random.seed(100)
+mycolors=np.random.choice(list(mpl.colors.XKCD_COLORS.keys()),len(years),
+                          replace=False)
+
+
+# 년도별 시계열 그리기
+plt.figure(figsize=(16,12),dpi=80)
+for i, y in enumerate(years):
+    if i>0:
+        plt.plot('month','value',data=df.loc[df.year==y,:],
+                 color=mycolors[i], label=y)
+        plt.text(df.loc[df.year==y,:].shape[0]-0.9,
+                 df.loc[df.year==y,'value'][-1:].values[0],
+                 y, fontsize=12, color=mycolors[i])
+        
+plt.gca().set(xlim=(-0.3,11),ylim=(2,30),ylabel='$Drug Sales$',xlabel='$Month$')
+plt.yticks(fontsize=12,alpha=.7)
+plt.title("Time series data",fontsize=20)
+plt.show()
+# subplot boxplot 만들기
+fig,axes = plt.subplots(1,2,figsize=(20,7),dpi=80)
+#분류할 열을 by에 넣기
+df.boxplot(column='value' ,by='year'     ,ax=axes[0],grid=False)
+df.boxplot(column='value'  ,by='month'   ,ax=axes[1],grid=False)
+
+plt.show()
+# 색 다르게 설정하기
+grouped=df.groupby('month')['value']
+mycolors=np.random.choice(list(mpl.colors.XKCD_COLORS.keys()),
+                          len(years),
+                          replace=False)
+
+box=plt.boxplot([grouped.get_group(g) for g in grouped.groups],
+                patch_artist=True,labels=grouped.groups.keys())
+
+#zip은 같은 index끼리 묶어줌
+for patch, color in zip(box['boxes'],mycolors):
+    patch.set_facecolor(color)
+
+plt.show()
+# seaborn  사용하여 그리기
+fig,axes = plt.subplots(1,2,figsize=(20,7),dpi=80)
+sns.boxplot(x='year', y ='value' ,data = df,ax=axes[0],palette='deep')
+sns.boxplot(x='month',y='value',
+            data=df.loc[~df.year.isin([1991,2008]),:],ax=axes[1],hue='month')
+
+axes[0].set_title('year-wise Box Plot\n(The Trend',fontsize=18)
+axes[1].set_title('year-wise Box Plot\n(The The Seasonality)',fontsize=18)
+plt.show()
