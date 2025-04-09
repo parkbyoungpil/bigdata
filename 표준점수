@@ -1,0 +1,51 @@
+#%% 표준점수
+import numpy as np
+from scipy import stats
+
+data = [55, 60, 65, 70, 75]
+
+# 평균과 표준편차
+mean = np.mean(data)
+std = np.std(data)
+
+# 각 값의 Z-점수 계산(기본수식)
+z_scores = [(x-mean)/ std for x in data]
+print(z_scores)
+
+# 또는 scipy 사용
+z_scores_scipy = stats.zscore(data)
+print(z_scores_scipy)
+#%%
+#%% bar 차트 그리기
+import matplotlib.pyplot as plt
+import seaborn as sns
+import pandas as pd
+from scipy.stats import zscore
+
+
+# 데이터
+students = ["철수", "영희", "민수", "지민", "하늘", "수진", "태호", "서연", "도윤", "유진"]
+scores = [72, 85, 90, 65, 78, 95, 88, 70, 60, 80]
+
+# 데이터프레임
+df = pd.DataFrame({"이름": students, "점수": scores})
+df["표준점수"] = zscore(df["점수"])
+
+# 스타일 설정
+sns.set(style="whitegrid")
+
+# 1. 점수 바 차트
+# 한글 처리
+plt.rcParams['font.family'] = 'Malgun Gothic'
+plt.rcParams['axes.unicode_minus'] = False
+
+
+
+  
+plt.figure(figsize=(10, 5))
+sns.barplot(x="이름", y="점수", data=df, palette="pastel")
+plt.axhline(df["점수"].mean(), color = "red", linestyle="--",label = "평균점수")
+plt.title("학생별 수학 점수")
+plt.legend()
+plt.tight_layout()  #
+plt.show()
