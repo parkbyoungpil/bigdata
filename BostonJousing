@@ -1,0 +1,61 @@
+# %% [1] 모듈 임포트
+import pandas as pd
+import matplotlib.pyplot as plt
+
+# 한글 깨짐 방지 (필요시)
+plt.rcParams['font.family'] = 'Malgun Gothic'
+plt.rcParams['axes.unicode_minus'] = False
+
+# %% [2] 데이터 불러오기 및 house_price 컬럼 추출
+df = pd.read_csv(r"C:\Users\user\Downloads\BostonHousing.csv")
+house_price = df['medv']
+print("house_price 확인:")
+print(house_price.head())
+
+# %% [3] 집값 평균, 중앙값, 사분위수 계산
+mean_val = house_price.mean()
+median_val = house_price.median()
+q1 = house_price.quantile(0.25)
+q2 = house_price.quantile(0.5)
+q3 = house_price.quantile(0.75)
+
+print("\n[집값 통계 요약]")
+print(f"평균: {mean_val:.2f}")
+print(f"중앙값: {median_val:.2f}")
+print(f"Q1 (1사분위수): {q1:.2f}")
+print(f"Q2 (2사분위수 = 중앙값): {q2:.2f}")
+print(f"Q3 (3사분위수): {q3:.2f}")
+
+# %% [4] 사분위수 기준으로 구간 나누고 평균 계산
+bins = [house_price.min() - 1, q1, q2, q3, house_price.max()]
+labels = ['Q1 이하', 'Q1~Q2', 'Q2~Q3', 'Q3 초과']
+price_group = pd.cut(house_price, bins=bins, labels=labels)
+group_mean = house_price.groupby(price_group).mean()
+
+# %% [5] 구간별 평균 시각화 (막대그래프)
+plt.figure(figsize=(8, 5))
+group_mean.plot(kind='bar', color='skyblue', edgecolor='black')
+plt.title('사분위수 기준 구간별 집값 평균')
+plt.xlabel('구간')
+plt.ylabel('평균 집값')
+plt.grid(axis='y')
+plt.tight_layout()
+plt.show()
+
+# %% [6] 집값 분포 상자그림(Boxplot) - Series.plot.box() 사용
+plt.figure(figsize=(6, 4))
+house_price.plot.box(vert=False, grid=True, color='blue')
+plt.title('집값 분포 (Boxplot)')
+plt.xlabel('집값')
+plt.tight_layout()
+plt.show()
+
+# %% [7] 집값 히스토그램 (8개 구간)
+plt.figure(figsize=(8, 5))
+plt.hist(house_price, bins=8, edgecolor='black', color='lightgreen')
+plt.title('집값 분포 (히스토그램, bin=8)')
+plt.xlabel('집값')
+plt.ylabel('빈도수')
+plt.grid(True)
+plt.tight_layout()
+plt.show()
