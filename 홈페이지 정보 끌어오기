@@ -1,32 +1,32 @@
-#%%
-import requests
+import requests as re
+from bs4 import BeautifulSoup
 import pandas as pd
 
-url_14 = "http://data4library.kr/api/loanItemSrch?authKey=14e8d6abe00ed74cfa8a423fbe289048c7a19521f3427f8b7923b854329a1f91\
-    &startDt=2025-01-01&endDt=2025-01-31&age=14&format=json"
-url_20 = "http://data4library.kr/api/loanItemSrch?authKey=14e8d6abe00ed74cfa8a423fbe289048c7a19521f3427f8b7923b854329a1f91\
-    &startDt=2025-01-01&endDt=2025-01-31&age=20&format=json"
-url_30 = "http://data4library.kr/api/loanItemSrch?authKey=14e8d6abe00ed74cfa8a423fbe289048c7a19521f3427f8b7923b854329a1f91\
-    &startDt=2025-01-01&endDt=2025-01-31&age=30&format=json"
+def get_stock_codes(pages=5):
+    base_url = "https://finance.naver.com/sise/sise_market_sum.naver?page="
+    stock_list = []
 
+    for page in range(1, pages + 1):
+        url = base_url + str(page)
+        headers = {'User-Agent': 'Mozilla/5.0'}
+        res = re.get(url, headers=headers)
+        soup = BeautifulSoup(res.text, 'html.parser')
 
-def get_top10_books(url):
-    r = requests.get(url)
-    data = r.json()
+        table = soup.select('table.type_2')[0]
+        rows = table.select('tr')[2:]
 
-    books = []
-    for d in data['response']['docs'][:10]:
-        doc = d['doc']
-        books.append({
-            '대출순위': doc.get('ranking'),
-            '제목': doc.get('bookname'),
-            '작가': doc.get('authors'),
-            '출판사': doc.get('publisher'),
-            '대출 회수': doc.get('loan_count')
-        })
+        for row in rows:
+            cols = row.select('td')
+            if len(cols) > 1:
+                link_tag = cols[1].select_one('a')
+                if link_tag:
+                    name = link_tag.text.strip()
+                    href = link_tag['href']
+                    #=기준으로 분리, -1은 맨뒤에거 가져온다는 의미
+                    code = href.split('=')[-1]
+                    stock_list.append({'종목명':name, '종목코드':code})
+    return pd.DataFrame(stock_list)
 
-    return pd.DataFrame(books)
-
-df14 = get_top10_books(url_14)
-df20 = get_top10_books(url_20)
-df30 = get_top10_books(url_30)
+# 사용 예시
+df = get_stock_codes(pages=3)
+print(df.head())
