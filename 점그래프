@@ -1,16 +1,28 @@
+
 #%%
 import pandas as pd
 import matplotlib.pyplot as plt
 
-df = pd.read_csv(r"C:\Users\user\Downloads\mtcars.csv")
+df = pd.read_csv(r"C:\Users\user\Downloads\dfdata\iris.csv")
 df
 
-df.plot.scatter(x='wt', y = 'mpg')
-plt.show()
+dict = {'setosa':'red','versicolor':'green','virginica':'blue'}
+colors = list(dict[key] for key in df.Species)
+colors
 
-df.plot.scatter(x = 'wt',
-                y = 'mpg',
-                d = 50,
-                c = 'red',
-                marker = 's')
+
+df.plot.scatter(x = 'Petal_Length',
+                y = 'Petal_Width',
+                s = 30,
+                c = colors,
+                marker = 'o')
+
+fig, ax = plt.subplots()
+
+for label, data in df.groupby('Species'):
+    ax.scatter(x=data['Petal_Length'],y=data['Petal_Width'], s=30,c = dict[label],marker = 'o', label = label)
+    print(data)
+ax.set_xlabel('Petal_Length')
+ax.set_ylabel('Petal_Width')
+ax.legend()
 plt.show()
