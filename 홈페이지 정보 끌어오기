@@ -1,41 +1,32 @@
-from bs4 import BeautifulSoup
-import urllib.request
+#%%
+import requests
 import pandas as pd
-import datetime
+
+url_14 = "http://data4library.kr/api/loanItemSrch?authKey=14e8d6abe00ed74cfa8a423fbe289048c7a19521f3427f8b7923b854329a1f91\
+    &startDt=2025-01-01&endDt=2025-01-31&age=14&format=json"
+url_20 = "http://data4library.kr/api/loanItemSrch?authKey=14e8d6abe00ed74cfa8a423fbe289048c7a19521f3427f8b7923b854329a1f91\
+    &startDt=2025-01-01&endDt=2025-01-31&age=20&format=json"
+url_30 = "http://data4library.kr/api/loanItemSrch?authKey=14e8d6abe00ed74cfa8a423fbe289048c7a19521f3427f8b7923b854329a1f91\
+    &startDt=2025-01-01&endDt=2025-01-31&age=30&format=json"
 
 
-def hollys_store():
-    result = []
-    for page in range(1, 10):
-        Hollys_url = f'https://www.hollys.co.kr/store/korea/korStore2.do?pageNo={page}&sido=&gugun=&store='
-        print(f'[INFO] 크롤링 중: {Hollys_url}')
-        html = urllib.request.urlopen(Hollys_url)
-        soup = BeautifulSoup(html, 'html.parser')
-        tag_tbody = soup.find('tbody')
+def get_top10_books(url):
+    r = requests.get(url)
+    data = r.json()
 
-        if not tag_tbody:
-            continue
+    books = []
+    for d in data['response']['docs'][:10]:
+        doc = d['doc']
+        books.append({
+            '대출순위': doc.get('ranking'),
+            '제목': doc.get('bookname'),
+            '작가': doc.get('authors'),
+            '출판사': doc.get('publisher'),
+            '대출 회수': doc.get('loan_count')
+        })
 
-        for store in tag_tbody.find_all('tr'):
-            store_td = store.find_all('td')
-            if len(store_td) <= 3:
-                break
+    return pd.DataFrame(books)
 
-            store_name = store_td[1].string
-            store_sido = store_td[0].string
-            store_address = store_td[3].string
-            store_phone = store_td[5].string
-
-            result.append([store_name, store_sido, store_address, store_phone])
-
-    return result
-
-
-# 실행 및 저장
-store_data = hollys_store()
-columns = ['매장명', '시도', '주소', '전화번호']
-df = pd.DataFrame(store_data, columns=columns)
-
-now = datetime.datetime.now()
-df.to_csv(f'hollys_store_{now:%Y%m%d}.csv', encoding='utf-8-sig', index=False)
-print('[완료] CSV 파일 저장 완료')
+df14 = get_top10_books(url_14)
+df20 = get_top10_books(url_20)
+df30 = get_top10_books(url_30)
