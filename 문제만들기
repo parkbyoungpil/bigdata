@@ -1,0 +1,201 @@
+
+#%% 2장
+import pandas as pd
+import numpy as np
+#시리즈 만들기
+temp = pd.Series([-0.8, -0.1, 7.7, 13.8, 18.0, 22.4,
+                  25.9, 25.3, 21.0, 14.0, 9.6, -1.4])
+
+#데이터프레임 만들기
+temp1 = pd.DataFrame([[1,2,3,4],[5,6,7,8],[9,10,11,12]])
+
+#인덱스 넣기
+temp.index = ['바보', '멍충이','똥개']
+
+#컬럼 넣기
+temp.columns = ['바보','멍충이','똥개']
+
+#인덱스로 여러개 찾기(끝값 포함인지 아닌지)
+temp.iloc[[5,6,7]]
+temp.iloc[5:8]
+
+#레이블에 대한 인덱싱으로 여러개 찾기(끝값 포함인지 아닌지)
+temp.loc['똥개']
+temp.loc[5:8]
+
+#조건문으로 찾기 2가지(하나는 Nan 안나오게)
+temp.loc[(temp >= 15) & (temp < 30)]
+temp.where(temp => 10).dropna()
+
+#sum(),mean() 등 다나오는 함수
+temp.discribe()
+
+#인덱스와 값 한번에 추가하기(series)
+temp.loc['temps'] = 30
+
+#loc과 iloc중에 추가 Next_index에 추가가 가능한것 만들기
+temp.loc[Next_idx] = 30
+temp.iloc[Next_idx] = 30 #은 안돼
+
+#시리즈 행 추가 가능한 다른 방법(적었는데 추가 안되는 법도)
+new = pd.Series[{'temps':30}]
+temp = temp.append(new)
+temp.append(new) #는 안돼
+temp = pd.concat([temp, new])# 는 새로운 방법 concat
+
+#index 무시하고 한번에 넣는법
+temp = temp.append(pd.Series([60]),ignore_index = True)
+
+#temp에 넣어서 레이블 인덱스가 있을때랑 없을때 행 버리는 방법 2개
+temp = temp.drop('temps')
+temp = temp.drop(1) #인덱스 없을때
+
+#temp에 안넣고 위에거 바꾸는법
+temp.drop('temps',inplace = True)
+temp.drop(1,inplace = True)
+
+#temp 객체를 동일한걸 가르키는 거랑 복사본 만들기
+temp = temp1
+temp = temp2.copy()
+
+#%% 4장
+import pandas as pd
+import numpy as np
+
+#경로 따와서 넣는법(엑셀과 csv 두개) 그리고 첫줄부터 데이터 있으면?
+df = pd.read_excel(r"C:\Users\user\Downloads\dfdata\mpg.xlsx")
+df = pd.read_csv(r"C:\Users\user\Downloads\dfdata\iris.csv",header = None)
+
+#type등을 알려주는, 앞에 5개, 뒤에 5개, 행 수, 열 수, 정보확인 함수 다 쓰기
+df.info()
+df.head()
+df.tail()
+df.shape[0]
+df.shape[1]
+df.['columns'].unique()
+
+#데이터프레임 모든거 다뽑는데 특정 행 하나 빼고
+df.loc[: ~df.columns.isin(['Species'])]
+
+#모든 기술통계, 특정 열 기술통계 출력
+print(df.describe())
+print(df['columns'].sum())
+
+#df1에 컬럼 정렬한거 내림차순 앞에 5개만 출력, 문장이어쓰기 여기서 하자
+df1 = df.sort_values(by = 'columns', ascending = False)\
+    .head()
+    
+#조건에 맞는 변수를 새 컬럼에 넣기(math가 20보다 작으면 Fail 크면 Pass)
+df['columns'] = np.where(df['math'] > 20, 'Pass', 'Fail')
+
+#조건에 맞는 행 출력(1반이고 수학 60정 이상)(1,3,5반 해당하면 출럭)
+df.query('nclass = 1 & math >= 60')  #괄호 묶으면 안돼
+df.query('nclass in [1,3,5]')
+
+#math 상위 10프로 출력
+w = df['math'] >= df['math'].quantile(0.9)
+print(df[w])
+
+#0은 행 1은 열일때 열추가
+df.insert(1,'columns',[n for n in range(12,23)])  #1은 열 위치 맨 뒤는 넣을 곳, 넣을 인덱스
+
+#df 데이터 타입 확인
+df = sns.load_dataset('df')
+print(df.dtypes)
+
+#자료형 변환
+df['new_columns']=df['columns'].astype(str)
+
+#행삭제 열삭제 하나씩
+df.drop(['columns'],axis = 1)  #열삭제는 컬럼명이랑 뒤에가 1이어야함
+df.drop(['index'],axis = 0)  #-------이거 삭제
+
+#행 합계 열 합계
+df1 = df[['math','english']]
+print(df1.sum(axis=0))   #행합계 각 행의 합계를 하나로
+df2 = df(['math','english'])
+print(df2.sum(axis=1))   #열합계 각 열의 합계 여러개
+
+#결측데이터 확인하기
+df1 = df[df['columns'].isna()]
+
+#결측데이터 = True일때 유효할때 = True일때 합 출력
+df1 = df.isnull().sum()  #결측데이터 True
+df1 = df.notnull().sum() #유효데이터 True
+
+#결측데이터 삭제, 0으로 채우기, 열의 평균 넣기
+df1 = df.dropna()
+df1 = df.fillna(0)
+df1 = df.drop(['date'],axis = 1)  #열의 평균 넣기
+df1 = df1.fillna(df1.mean())
+
+#데이터 두개 위아래, 양옆으로 붙이기
+df3 = pd.concat([df1,df2],axis = 1)   #양옆 붙이기
+df3 = pd.concat([df1,df2],axis = 0)   #위아래(print(df3.loc['0'])하면 2개 나옴)
+
+#합칠때 없는거 출력 x, 없는거 Nan, df1다출력, df2다출력 하나씩
+df3 = pd.merge(df1,df2,how = 'inner', on='고객번호')
+df3 = pd.merge(df1,df2,how = 'outer', on='고객번호')
+df3 = pd.merge(df1,df2,how = 'left', on='고객번호')
+df3 = pd.merge(df1,df2,how = 'right', on='고객번호')
+
+#반을 기준으로 요약하는데 math의 평균 반별로 나오게 그 반이 인덱스가 되지 않게도 같이
+df.groupby('nclass', as_index = False).agg(colums = ('math','mean'))
+df.groupby('nclass').mean()     #전부다
+
+#man으로 나누고 drv한번 더 분류
+df.groupby(['man','drv'])\
+    .agg(mean_cty = ('cty','mean'))
+
+#drv 갯수 세기
+df['drv'].value_counts() #자동으로 큰 것부터 정렬(query불가)
+
+#제조 회사 별로 suv 자동차의 도시(cty) 고속도로(hwy) 합산 연비 평균을 구해 내림차순 정렬하고 5개 출력
+df.query('category == "suv"')\     #따옴표 주의
+    .assign(total = (df['hwy'] + df['cty']) / 2)\
+    .groupby('manufacturer')\
+    .agg(mean_tot = ('total', 'mean'))\
+    .sort_values('mean_tot',ascending = False)\
+    .head()
+    
+#category에 따라 어떤 차종의 cty연비가 높은지 비교하는 것, 내림차순 정렬
+df.groupby('category')\
+    .agg(cty_mean = ('cty', 'mean'))
+    .sort_values(by = 'mean_cty', ascending = False)
+    
+#어느 category의 hwy평균이 제일 높은지 알아보고 위에 3개 출력
+df.groupby('category')\
+    .agg(hwy_mean('hwy','mean'))\
+    .sort_values(by = 'hwy_mean' ,ascending = False)
+    .head(3)
+    
+#어떤 회사에서 compact차종을 가장 많이 생산하는지
+df.groupby('man')\
+    .agg(n = ('compact','count'))\
+    .sort_values(by = 'n', ascending = False)
+    
+#등급 나누기
+math_grade = pd.cut(df.math,bins,labels=['f','d','c','b','a'])  #bins는 점수들 6개 있어야함
+
+#%% 5장
+import pandas as pd
+import numpy as np
+
+#
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
