@@ -1,13 +1,32 @@
+#%%
 import requests
 import pandas as pd
 
-url = r"http://data4library.kr/api/loanItemSrch?authKey=e7d532578f54964344bb77b75832c95a646539382a532d5959dbc445add4d51f&\
-startDt=2025-01-01&endDt=2025-01-31&age=20&format=json"
+url_14 = "http://data4library.kr/api/loanItemSrch?authKey=14e8d6abe00ed74cfa8a423fbe289048c7a19521f3427f8b7923b854329a1f91\
+    &startDt=2025-01-01&endDt=2025-01-31&age=14&format=json"
+url_20 = "http://data4library.kr/api/loanItemSrch?authKey=14e8d6abe00ed74cfa8a423fbe289048c7a19521f3427f8b7923b854329a1f91\
+    &startDt=2025-01-01&endDt=2025-01-31&age=20&format=json"
+url_30 = "http://data4library.kr/api/loanItemSrch?authKey=14e8d6abe00ed74cfa8a423fbe289048c7a19521f3427f8b7923b854329a1f91\
+    &startDt=2025-01-01&endDt=2025-01-31&age=30&format=json"
 
-r=requests.get(url)
-data=r.json()
-#%%
-books=[]
-for d in data['response']['docs']:
-    books.append(d['doc'])
-dfbooks = pd.DataFrame(data=books)
+
+def get_top10_books(url):
+    r = requests.get(url)
+    data = r.json()
+
+    books = []
+    for d in data['response']['docs'][:10]:
+        doc = d['doc']
+        books.append({
+            '대출순위': doc.get('ranking'),
+            '제목': doc.get('bookname'),
+            '작가': doc.get('authors'),
+            '출판사': doc.get('publisher'),
+            '대출 회수': doc.get('loan_count')
+        })
+
+    return pd.DataFrame(books)
+
+df14 = get_top10_books(url_14)
+df20 = get_top10_books(url_20)
+df30 = get_top10_books(url_30)
