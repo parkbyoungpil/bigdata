@@ -1,0 +1,13 @@
+import requests
+import pandas as pd
+
+url = r"http://data4library.kr/api/loanItemSrch?authKey=e7d532578f54964344bb77b75832c95a646539382a532d5959dbc445add4d51f&\
+startDt=2025-01-01&endDt=2025-01-31&age=20&format=json"
+
+r=requests.get(url)
+data=r.json()
+#%%
+books=[]
+for d in data['response']['docs']:
+    books.append(d['doc'])
+dfbooks = pd.DataFrame(data=books)
