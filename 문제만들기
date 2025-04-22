@@ -170,32 +170,327 @@ df.groupby('category')\
     .head(3)
     
 #어떤 회사에서 compact차종을 가장 많이 생산하는지
-df.groupby('man')\
-    .agg(n = ('compact','count'))\
-    .sort_values(by = 'n', ascending = False)
+df.qurey('cateory == "compact"')\
+    .groupby('man')
+    .agg(n = 'man','count')
+    .sort_values('n',ascending = False)
     
 #등급 나누기
-math_grade = pd.cut(df.math,bins,labels=['f','d','c','b','a'])  #bins는 점수들 6개 있어야함
+dfexam.loc[0,'math']=1
+math_grade = pd.cut(df['math'],bins,labels=['f','d','c','b','a'])  #bins는 점수들 6개 있어야함
 
+#category 정렬순서
+dfiris['Species'] = pd.Categorical(dfiris['Species'], categories=['versicolor','virsinica','setosa'],
+                                   ordered=True)
 #%% 5장
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
 
-#
+#도수분포(갯수세기), 그걸 이용해서 비율 구하는 것 까지
+fd.value_counts()/fd.size()
+
+#센 것 활용해서 막대그래프 작성
+fd = fd.value_counts()
+fd.plot.bar(xlabel = 'columns',
+             ylabel = 'columns1',
+             rot = 0,
+             title = '----')
+plt.show()
+
+#막대그래프 순서 바꾸기
+fd = pd.Categorical(fd, categories = ['1', '2', '4', '3'], order = True) #order = True는 순서가 있는데이터
+fd1 = fd.value_counts()
+
+#가로 막대 그래프
+fd.plot.barh(---)
+
+#그래프 여백
+plt.subplots_adjust(left = 0.2)
+
+#원그래프 출력 (안에 내용 백분율로)
+fd.plot.pie(ylabel = '',
+            autopct = '%1,0f%%',  #얘가 백분율
+            title = '')
+
+#mpg.csv 파일에서 cls의 개수에 따른 분포에서 최대 5위까지의 cls 막대그래프와 원그래프로 나타내시오
 
 
+#절사평균(데이터의 상위n%와 하위n%를 제외한 후 계산한 평균)과 중앙값 구하기
+fd.median()
+stats.trim_mean(fd,0.2)
 
+#사분위수 구하기
+print(fd.quantile([0.25, 0.5, 0.75]))
 
+#분산과 표준편차
+print(fd.var())  #분산
+print(fd.std())  #표준편차 (값이 크면 실쳑차이 크다, 작으면 실력차이 작다)
 
+#age열에 있는 nan제거하고 히스토그램 만들기
+df1 = df.dropna(subset='age',axis = 0)  #열을 훑으면서 데이터 삭제하면 axis는 0이다
+df['age'].plot.hist(ylabel = "----")
 
+#두개의 그래프를 한번에 그리는데 투명도는0.3
+df.query('sex=="male"')['age'].plot.hist(ylabel = '', alpha=0.3) #query는 조건무조건 조건
+df.query('sex=="female"')['age'].plot.hist(ylabel = '',alpha = 0.3)
 
+#연속된 데이터를 6개의 구간으로 나누고 정렬하지 않기
+df['age'].value_counts(bins = 6, sort = False)  #sort=False해줘야 정렬안되고 구간순서대로 나옴
 
+#그래프에서 x축 값의 회전각도, 격자, 막대의 색, 그래프의 크기를 정하는건?
+rot = 30
+color = 'b'
+grid=True
+figsize=(3,3)
 
+#한글폰트와 마이너스부호 깨짐 방지
+plt.rcParams['font.family']='Malgun Gothic'
+plt.rcParams['axes.unicode_minus'] = False
 
+#그래프 2,2로 화면분활
+fig, axes = plt.subplots(nrows = 2, ncols = 2)
 
+#분할영역에 그래프 작성
+df['columns'].plot.hist(ax=axes[0,0])
 
+#%% 6장
+import pandas as pd
+import numpy as np
 
+#산점도 그래프 그리기
+df.plot.scatter(x='wt',
+                y='mpg',
+                s=40,        #점 크기
+                c='red',     #점 색
+                marker='s')  #점 모양
 
+#다중 산점도
+vars = ['mpg','disp','drat','wt']
+pd.plotting.scatter_matrix(df[vars])
 
+#그룹마다 색 다르게해서 점 색 바꾸기
+dict = {'setosa':'red','versicolor':'blue','virginica''green'}
+colors = list(dict[key] for key in df.Species)  #df.Species로 접근 가능
 
+for label, data in df.groupby('Species'):
+    ax.scatter(x=data['Petal_Length'], y=data['Petal_Width'], s = 30,
+               c=dict[label], marker='o', label = label)
+    print(data)
+    
+#범례표시
+ax.legend()
 
+#상관계수 -0.9, 0.9 해석
+상관계수가 -0.9이면 음의관계가 높다 0.9면 양의 관계가 높다 1이면 오차가 낮다 0이면 상관이없다.
+
+#회귀식 계산하고 출력하기
+m, b = np.polyfit(beers, bal, 1)
+plt.plot(beers, m*np.array(beers)+b)
+
+# a, b 변수간 상관계수 계산
+df['a'].corr(df['b'])
+
+#Species를 제외한 모든 변수들간의 상관계수
+df1 = df.loc[:, ~df.columns.isin(['Species'])]
+df1.corr()
+
+#시리즈 만들때 index 1부터 시작하려면
+df = pd.Series([1,2,3,4,5,6,7,8,9,0],
+               index=list(range(1,10)))
+
+#선그래프 만들기 점추가해서
+fd.plot(title = '',
+        xlabel = '',
+        ylabel = ''
+        linestyle = 'solid'
+        marker = 'o')
+
+#2개의 시리즈 합쳐서 1개의 데이터프레임 만들기
+dict = {'df1': fd1, 'df2':fd2}  #fd가 시리즈, df가 colums명
+fd = pd.DataFrame(dict,
+                  index = list(range(1,13)))
+
+#범례지정
+plt.legend(loc='upper right')  #upper right 는 위치
+
+#원하는 컬럼만 가져오기
+df = df[['crim','rm','dis','tax','medv']]
+
+#M으로 grp컬럼을 채우고 medv 25 넘으면 H, 17 이하면 L로 바꾸기
+grp = pd.Series(['M' for i in range(len(df))])
+grp.loc[df.medv >= 25.0] = 'H'
+grp.loc[df.medv <= 17.0] = 'L'
+df['grp'] = grp        #추가하는거
+
+#H,M,L 순으로 하고 순서 있는거롤 정의하고 데이터타입 변경하기
+new_odr = ['H','M','L']
+new_dtype = CategoricalDtype(categories = new_odr, ordered=True)
+df.grp = df.grp.astype(new_dtype)
+df.grp.dtype
+
+#주택가격 그룹별 분포 큰수로 정렬 안하고
+df.grp.value_counts(sort = False)
+
+#분활영역에 for문으로 그래프 그리기(한 그래프 안에 grp로 나누기)
+for i in range(5):
+    df[df.columns[i]].plot.hist(ax=axes[i//3,i%3], by = 'grp', grid =False
+                                ylabel = '',xlabel = titles[i])
+
+#다중 산점도인데 문자 빼고
+pd.plotting.scatter_matrix(df.iloc[:,:5])
+
+#문자 빼고 모든 변수 상관계수
+df.iloc[:,:5].corr()
+
+#반복문으로 점에 색 넣기
+colors = list(dict[key] for key in df.grp)
+
+#20240101부터 기간 6일
+dates = pd.date_range('20240101',periods=6)
+
+#6행 4열 짜리 난수 생성하고 coulmns는 ABCD
+df = pd.DataFrame(np.random.randn(6,4),index = dates, columns = list('ABCD'))
+
+#timestamp로 자료형 변환
+df['new_date'] = pd.to_datetime(df['Date'])
+
+#date에서 년도만 뽑아서 저장
+df['Year'] = df['new_Date'].dt.year
+
+#date에서 월 까지 넣기
+df['Date_m'] = df['new_Date'].dt.to_period(freq='M')
+
+#열 삭제
+df.drop('Date',axis = 1, inplace = True) #원본변형
+
+#index설정
+df.set_index('new_Date', inplace = True)
+
+#2015-07 포함된거 전부출력
+df.loc['2015-07']
+
+#오늘과의 차이
+today = pd.to_datetime('2023-11-15')
+df['time_diff'] = today-df.index
+
+#10by7 그래프 해상도 120
+plt.rcParams.update({'figure.figsize':(10,7),'figure.dpi:120'})
+
+#plt 그래프 그리기
+def plot_df(df,x,y,title="",xlabel'Date',ylabel='Value',dpi = 100):
+    plt.figure(figsize=(16,5),dpi=dpi)
+    plt.plot(x,y,color = 'tab:red')
+    plt.gca().set(title,xlabel=xlabel,ylabel=ylabel)
+    plt.show()
+    
+#data 받아올때 date를 index로
+df2 = pd.read_csv(file_path, parse_dates=['date'],
+                  index_col='date')
+
+#일반컬럼으로 해서 수정할 수 있게
+df2.reset_index(inplace=True)
+
+#반복문으로 년도 가져오기
+df2['year'] = [d.year for d in df2['date']]
+
+#3글자로 요약하기(달)
+df2.['month'] = [d.strftime('%b') for d in df2.date]
+
+#표준점수는 무슨뜻?
+Z=0이면 평균과 같은값
+Z=+1이면 평균에서 1표준편차 떨어져있음
+
+#각 값의 z점수 계산
+z_scores = [(x - mean) / std for x in data]
+
+#평균 표준편차 구하기
+mean = np.mean(data)
+std = np.std(data)
+
+#scipy사용
+from scipy import stats
+z_scores_scipy = stats.zscore(data)
+
+#표준선 구하기
+plt.axhline(df["점수"].mean(), color = 'red', linestyle"--", label = "평균점수")
+
+#표준넘수 계산하고 방사형 차트 데이터 준비
+from scipy.stats import zscore
+z_scores = zscore(scores)
+
+num_vars = len(subjrects)
+angles = np.linspace(0, 2*np.pi, num_vars, endpoint = False).tolist()
+z_scores = z_scores.tolist()
+
+#원형으로 만들기 위해 시작점 다시 추가!!!!!
+z_scores += z_scores[:1]
+angles += angles[:1]
+
+#방사형 그래프 그리기
+fig, ax = plt.subplots(figsize = (6,6),subplot_kw = dict(polar = True))
+ax.plot(angles, z_scores, color = 'blue', linewidth = 2)
+ax.fill(angles, z_scores, color = 'skyblue', alpha=0.4)
+
+#라벨 설정
+ax.set_xticks(angles[:-1])
+ax.set_xticklabels(subjects)
+
+#표준점수 눈금생성
+ax.set_yticklabels(["-2","-1","0","1","0"])
+plt.tight_layout()
+
+#%% 7장
+
+#중요한거
+format = jason
+
+#url가져올때 하드코딩ㅇ말고
+for page in range(1,10)   #9페이지까지 가져옴
+    hollys_url = "--%d--" %page
+
+#url여는법
+html = urllib.request.urlopen(Hollys_url)
+soupHollys = BeautifulSoup(html,'html.parser')
+
+#tbody찾는법
+tag_tbody = soupHollys.find('tbody')
+
+#tr 전부 찾고 td찾아서 text만 추출
+for store in tag_tbody.find_all('tr'):
+    if len(store) <= 3:
+        break
+    store_td = store.find_all('td')
+    store_name = store_td[1].string
+    store_sido = store_td[0].string
+    result.append([store_name]+[store_sido])
+
+#실시간 요청
+html = re.get(url)
+
+#contant를 바이트 형식으로 변환
+html = html.content
+
+#바디 찾기
+body = soup.find('body')
+
+#타고타고들어가기(#이 중요 아이디 rate info 타고 div타고 p안에 today)
+body_tabel = body.select('#chart_area > div.rate_info > div > p.no_today')
+
+#현재가 가져오기 text가 가격
+return body_table[0].find('span').text
+
+#json 응답
+data = r.json()
+
+#실제 도서정보 바탕 가져오기
+books = []
+for d in data['response']['docs'][:10]:
+    doc = d['doc']
+    books.append({
+        "대출순위": doc.get('ranking')
+        "제목": doc.get('bookname')
+        "작가": doc.get('authors')
+    })
+
+return pd.DataFrame(books)
