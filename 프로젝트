@@ -1,0 +1,564 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+from scipy.stats import ttest_rel
+from scipy.stats import ttest_ind
+
+# ✅ 폰트 설정 (윈도우: Malgun Gothic, Mac: AppleGothic, Ubuntu: NanumGothic)
+plt.rcParams['font.family'] = 'Malgun Gothic'
+plt.rcParams['axes.unicode_minus'] = False
+
+# ✅ 1. 엑셀 파일 불러오기
+file_path = r"C:\Users\user\Downloads\시군구별_이동자수_시군구내.xlsx"
+df = pd.read_excel(file_path, sheet_name='데이터')
+df_clean = df.iloc[1:].copy()
+df_clean.reset_index(drop=True, inplace=True)
+
+# ✅ 2. 부산 데이터만 정제
+df_melted = df_clean.set_index('행정구역(시군구)별')
+df_melted = df_melted.apply(pd.to_numeric)
+busan = df_melted.loc['부산광역시'].copy()
+busan.index = pd.to_datetime(busan.index, format='%Y.%m')
+busan.sort_index(inplace=True)
+
+# ✅ 3. 월별 이동 추이 그래프 (연도별 선 그래프)
+busan_df = busan.to_frame(name='전입자 수')
+busan_df['년도'] = busan_df.index.year
+busan_df['월'] = busan_df.index.month
+pivot_df = busan_df.pivot(index='월', columns='년도', values='전입자 수')
+
+plt.figure(figsize=(12, 6))
+sns.lineplot(data=pivot_df, markers=True, dashes=False)  # <-- 실선으로 고정
+plt.title('부산광역시 월별 시군구간 전입자 수 (연도별)')
+plt.xlabel('월')
+plt.ylabel('전입자 수')
+plt.xticks(range(1, 13))
+plt.grid(True)
+plt.tight_layout()
+plt.show()
+
+# ✅ 4. 연도별 분기 평균 계산 및 출력
+busan_df['분기'] = busan_df['월'].apply(lambda m: f'{((m - 1)//3 + 1)}분기')
+quarterly_table = busan_df.groupby(['년도', '분기'])['전입자 수'].mean().unstack()
+print(" 부산광역시 연도별 분기 평균 전입자 수:")
+print(quarterly_table.round(1))
+
+# ✅ 5년간 전체 분기별 평균 계산
+total_quarter_avg = busan_df.groupby('분기')['전입자 수'].mean()
+print("\n 2020~2024년 전체 기준, 분기별 평균 전입자 수:")
+print(total_quarter_avg.round(1).sort_index())  # 정렬해서 깔끔하게 출력
+
+# 연도별로 Q1 평균 vs Q2~Q4 평균 비교
+years = range(2020, 2025)
+q1_means = []
+q_rest_means = []
+
+for y in years:
+    year_data = busan[busan.index.year == y]
+    q1 = year_data[year_data.index.month.isin([1, 2, 3])].mean()
+    q_rest = year_data[~year_data.index.month.isin([1, 2, 3])].mean()
+    q1_means.append(q1)
+    q_rest_means.append(q_rest)
+
+# 대응표본 t-검정
+t_stat, p_value = ttest_rel(q1_means, q_rest_means)
+
+print(f"\n 대응표본 t-검정 결과:")
+print(f"t-statistic: {t_stat:.4f}")
+print(f"p-value: {p_value:.6f}")
+if p_value < 0.05:
+    print("→ 1~3월 이동량이 통계적으로 유의미하게 많습니다. (대립가설 채택)")
+else:
+    print("→ 1~3월 이동량은 다른 분기와 통계적으로 차이가 없습니다. (귀무가설 유지)")
+#%%
+    
+# 파일 불러오기
+file_path = r"C:\Users\user\Downloads\시군구_연령_5세_별_이동자수_부산.xlsx"
+df = pd.read_excel(file_path, sheet_name="데이터")
+df = df.iloc[1:].copy()
+df.columns = df.columns.str.strip()
+df['행정구역(시군구)별'] = df['행정구역(시군구)별'].ffill()
+
+# '연령별' 열 제거하고 숫자만 추출
+df = df.drop(columns=['연령별'])
+
+# 분기 형식 문자열 컬럼만 선택
+value_columns = [col for col in df.columns if '/' in col]
+df[value_columns] = df[value_columns].apply(pd.to_numeric, errors='coerce')
+
+# 데이터 변형
+df_melted = df.melt(id_vars='행정구역(시군구)별', value_vars=value_columns,
+                    var_name='분기', value_name='이동자수')
+
+# 분기별 평균 이동자 수 계산
+quarterly_avg = df_melted.groupby(['행정구역(시군구)별', '분기'])['이동자수'].mean().reset_index()
+
+# 피벗: 분기를 index로 하고 지역을 column으로
+pivot_df = quarterly_avg.pivot(index='분기', columns='행정구역(시군구)별', values='이동자수')
+
+# 시각화
+plt.figure(figsize=(16, 8))
+sns.lineplot(data=pivot_df)
+plt.title('2020~2024년 부산 시군구내 분기별 평균 이동자 수')
+plt.xlabel('분기')
+plt.ylabel('평균 이동자 수')
+plt.xticks(rotation=45)
+plt.legend(title='행정구역', bbox_to_anchor=(1.05, 1), loc='upper left')  # ← 범례를 오른쪽 옆으로
+plt.tight_layout()
+plt.grid(True)
+plt.show()
+    
+# ✅ 엑셀 파일 경로 (사용자 환경에 맞게 수정)
+file_path = r"C:\Users\user\Downloads\부산광역시_시군구_각세별_이동자수_시군구내.xlsx"
+
+# ✅ 1. 엑셀 시트 불러오기
+xls = pd.ExcelFile(file_path)
+df = xls.parse('데이터')
+
+# ✅ 엑셀 시트 불러오기 및 전처리
+xls = pd.ExcelFile(file_path)
+df = xls.parse('데이터')
+df_clean = df.iloc[1:].copy()
+df_clean.columns = ['행정구역별', '각세별', '2020', '2021', '2022', '2023', '2024']
+df_clean['행정구역별'] = df_clean['행정구역별'].ffill()
+df_clean['각세별'] = df_clean['각세별'].astype(str)
+
+# ✅ melt 후 나이 변환
+df_melted = df_clean.melt(id_vars=['행정구역별', '각세별'], var_name='년도', value_name='이동자수')
+df_melted['이동자수'] = pd.to_numeric(df_melted['이동자수'])
+df_melted['나이'] = df_melted['각세별'].str.replace('세', '', regex=False).astype(int)
+
+# ✅ 0~19세 필터링
+df_filtered = df_melted[df_melted['나이'].between(0, 19)]
+# ✅ 시각화: 선명한 색상 팔레트 지정 ("tab10"은 10개 기본색으로 구분 뚜렷)
+custom_palette = sns.color_palette("tab10", n_colors=df_filtered['행정구역별'].nunique())
+
+
+# ✅ 시각화: 각 나이를 x축으로 세부 표시
+sns.set(style="whitegrid", font="Malgun Gothic", rc={"axes.unicode_minus": False})
+g = sns.FacetGrid(df_filtered, 
+                  col="년도", 
+                  hue="행정구역별", 
+                  col_wrap=3, 
+                  height=4, 
+                  sharey=False)
+
+g.map(sns.lineplot, "나이", "이동자수", marker='o')  # 선 + 점
+
+# ✅ x축 눈금: 0~19세까지 하나씩 모두 보이게
+for ax in g.axes.flat:
+    ax.set_xticks(range(0, 20))
+    ax.set_xticklabels(range(0, 20), rotation=45)
+
+g.add_legend(title='행정구역')
+g.set_titles("{col_name}년")
+plt.subplots_adjust(top=0.9)
+g.fig.suptitle("부산광역시 0~19세 연령별 시군구 간 전입자 수 추이 (2020~2024)", fontsize=14)
+plt.show()
+#%%
+# ✅ 1. 엑셀 파일 불러오기
+file_path = r"C:\Users\user\Downloads\시군구별_이동자수_시군구내.xlsx"
+df = pd.read_excel(file_path, sheet_name='데이터')
+df_clean = df.iloc[1:].copy()
+df_clean.reset_index(drop=True, inplace=True)
+# ✅ 2. 부산 데이터만 정제
+df_melted = df_clean.set_index('행정구역(시군구)별')
+df_melted = df_melted.apply(pd.to_numeric)
+incheon = df_melted.loc['인천광역시'].copy()
+incheon.index = pd.to_datetime(incheon.index, format='%Y.%m')
+incheon.sort_index(inplace=True)
+
+# ✅ 3. 월별 이동 추이 그래프 (연도별 선 그래프)
+incheon_df = incheon.to_frame(name='전입자 수')
+incheon_df['년도'] = incheon_df.index.year
+incheon_df['월'] = incheon_df.index.month
+pivot_df = incheon_df.pivot(index='월', columns='년도', values='전입자 수')
+
+plt.figure(figsize=(12, 6))
+sns.lineplot(data=pivot_df, markers=True, dashes=False)
+plt.title('인천광역시 월별 시군구간 전입자 수 (연도별)')
+plt.xlabel('월')
+plt.ylabel('전입자 수')
+plt.xticks(range(1, 13))
+plt.grid(True)
+plt.tight_layout()
+plt.show()
+
+# ✅ 4. 연도별 분기 평균 계산 및 출력
+incheon_df['분기'] = incheon_df['월'].apply(lambda m: f'{((m - 1)//3 + 1)}분기')
+quarterly_table =incheon_df.groupby(['년도', '분기'])['전입자 수'].mean().unstack()
+print(" 인천광역시 연도별 분기 평균 전입자 수:")
+print(quarterly_table.round(1))
+
+# ✅ 5년간 전체 분기별 평균 계산
+total_quarter_avg = incheon_df.groupby('분기')['전입자 수'].mean()
+print("\n 2020~2024년 전체 기준, 분기별 평균 전입자 수:")
+print(total_quarter_avg.round(1).sort_index())  # 정렬해서 깔끔하게 출력
+
+# 연도별로 Q1 평균 vs Q2~Q4 평균 비교
+years = range(2020, 2025)
+q1_means = []
+q_rest_means = []
+
+# ✅ 엑셀 파일 경로 (사용자 환경에 맞게 수정)
+file_path = r"C:\Users\user\Downloads\인천광역시_시군구_각세별_이동자수_시군구내.xlsx"
+
+# ✅ 1. 엑셀 시트 불러오기
+xls = pd.ExcelFile(file_path)
+df = xls.parse('데이터')
+
+# ✅ 엑셀 시트 불러오기 및 전처리
+xls = pd.ExcelFile(file_path)
+df = xls.parse('데이터')
+df_clean = df.iloc[1:].copy()
+df_clean.columns = ['행정구역별', '각세별', '2020', '2021', '2022', '2023', '2024']
+df_clean['행정구역별'] = df_clean['행정구역별'].ffill()
+df_clean['각세별'] = df_clean['각세별'].astype(str)
+
+# ✅ melt 후 나이 변환
+df_melted = df_clean.melt(id_vars=['행정구역별', '각세별'], var_name='년도', value_name='이동자수')
+df_melted['이동자수'] = pd.to_numeric(df_melted['이동자수'])
+df_melted['나이'] = df_melted['각세별'].str.replace('세', '', regex=False).astype(int)
+
+# ✅ 0~19세 필터링
+df_filtered = df_melted[df_melted['나이'].between(0, 19)]
+# ✅ 시각화: 선명한 색상 팔레트 지정 ("tab10"은 10개 기본색으로 구분 뚜렷)
+custom_palette = sns.color_palette("tab10", n_colors=df_filtered['행정구역별'].nunique())
+
+
+# ✅ 시각화: 각 나이를 x축으로 세부 표시
+sns.set(style="whitegrid", font="Malgun Gothic", rc={"axes.unicode_minus": False})
+g = sns.FacetGrid(df_filtered, 
+                  col="년도", 
+                  hue="행정구역별", 
+                  col_wrap=3, 
+                  height=4, 
+                  sharey=False)
+
+g.map(sns.lineplot, "나이", "이동자수", marker='o')  # 선 + 점
+
+# ✅ x축 눈금: 0~19세까지 하나씩 모두 보이게
+for ax in g.axes.flat:
+    ax.set_xticks(range(0, 20))
+    ax.set_xticklabels(range(0, 20), rotation=45)
+
+g.add_legend(title='행정구역')
+g.set_titles("{col_name}년")
+plt.subplots_adjust(top=0.9)
+g.fig.suptitle("인천광역시 0~19세 연령별 시군구 간 전입자 수 추이 (2020~2024)", fontsize=14)
+plt.show()
+#%%
+# ✅ 1. 엑셀 파일 불러오기
+file_path = r"C:\Users\user\Downloads\시군구별_이동자수_시군구내.xlsx"
+df = pd.read_excel(file_path, sheet_name='데이터')
+df_clean = df.iloc[1:].copy()
+df_clean.reset_index(drop=True, inplace=True)
+# ✅ 2. 부산 데이터만 정제
+df_melted = df_clean.set_index('행정구역(시군구)별')
+df_melted = df_melted.apply(pd.to_numeric)
+daegu = df_melted.loc['대구광역시'].copy()
+daegu.index = pd.to_datetime(daegu.index, format='%Y.%m')
+daegu.sort_index(inplace=True)
+
+# ✅ 3. 월별 이동 추이 그래프 (연도별 선 그래프)
+daegu_df = daegu.to_frame(name='전입자 수')
+daegu_df['년도'] = daegu_df.index.year
+daegu_df['월'] = daegu_df.index.month
+pivot_df = daegu_df.pivot(index='월', columns='년도', values='전입자 수')
+
+plt.figure(figsize=(12, 6))
+sns.lineplot(data=pivot_df, markers=True, dashes=False)  # <-- 실선으로 고정
+plt.title('대구광역시 월별 시군구간 전입자 수 (연도별)')
+plt.xlabel('월')
+plt.ylabel('전입자 수')
+plt.xticks(range(1, 13))
+plt.grid(True)
+plt.tight_layout()
+plt.show()
+
+# ✅ 4. 연도별 분기 평균 계산 및 출력
+daegu_df['분기'] = daegu_df['월'].apply(lambda m: f'{((m - 1)//3 + 1)}분기')
+quarterly_table = daegu_df.groupby(['년도', '분기'])['전입자 수'].mean().unstack()
+print(" 대구광역시 연도별 분기 평균 전입자 수:")
+print(quarterly_table.round(1))
+
+# ✅ 5년간 전체 분기별 평균 계산
+total_quarter_avg = daegu_df.groupby('분기')['전입자 수'].mean()
+print("\n 2020~2024년 전체 기준, 분기별 평균 전입자 수:")
+print(total_quarter_avg.round(1).sort_index())  # 정렬해서 깔끔하게 출력
+
+
+# ✅ 엑셀 파일 경로 (사용자 환경에 맞게 수정)
+file_path = r"C:\Users\user\Downloads\대구광역시_시군구_각세별_이동자수_시군구내.xlsx"
+
+# ✅ 1. 엑셀 시트 불러오기
+xls = pd.ExcelFile(file_path)
+df = xls.parse('데이터')
+
+# ✅ 엑셀 시트 불러오기 및 전처리
+xls = pd.ExcelFile(file_path)
+df = xls.parse('데이터')
+df_clean = df.iloc[1:].copy()
+df_clean.columns = ['행정구역별', '각세별', '2020', '2021', '2022', '2023', '2024']
+df_clean['행정구역별'] = df_clean['행정구역별'].ffill()
+df_clean['각세별'] = df_clean['각세별'].astype(str)
+
+# ✅ melt 후 나이 변환
+df_melted = df_clean.melt(id_vars=['행정구역별', '각세별'], var_name='년도', value_name='이동자수')
+df_melted['이동자수'] = pd.to_numeric(df_melted['이동자수'], errors='coerce')
+df_melted['나이'] = df_melted['각세별'].str.replace('세', '', regex=False).astype(int)
+
+# ✅ 0~19세 필터링
+df_filtered = df_melted[df_melted['나이'].between(0, 19)]
+# ✅ 시각화: 선명한 색상 팔레트 지정 ("tab10"은 10개 기본색으로 구분 뚜렷)
+custom_palette = sns.color_palette("tab10", n_colors=df_filtered['행정구역별'].nunique())
+
+
+# ✅ 시각화: 각 나이를 x축으로 세부 표시
+sns.set(style="whitegrid", font="Malgun Gothic", rc={"axes.unicode_minus": False})
+g = sns.FacetGrid(df_filtered, 
+                  col="년도", 
+                  hue="행정구역별", 
+                  col_wrap=3, 
+                  height=4, 
+                  sharey=False)
+
+g.map(sns.lineplot, "나이", "이동자수", marker='o')  # 선 + 점
+
+# ✅ x축 눈금: 0~19세까지 하나씩 모두 보이게
+for ax in g.axes.flat:
+    ax.set_xticks(range(0, 20))
+    ax.set_xticklabels(range(0, 20), rotation=45)
+
+g.add_legend(title='행정구역')
+g.set_titles("{col_name}년")
+plt.subplots_adjust(top=0.9)
+g.fig.suptitle("대구광역시 0~19세 연령별 시군구 간 전입자 수 추이 (2020~2024)", fontsize=14)
+plt.show()
+#%%
+# ✅ 1. 엑셀 파일 불러오기
+file_path = r"C:\Users\user\Downloads\시군구별_이동자수_시군구내.xlsx"
+df = pd.read_excel(file_path, sheet_name='데이터')
+df_clean = df.iloc[1:].copy()
+df_clean.reset_index(drop=True, inplace=True)
+# ✅ 2. 부산 데이터만 정제
+df_melted = df_clean.set_index('행정구역(시군구)별')
+df_melted = df_melted.apply(pd.to_numeric)
+gwangju = df_melted.loc['광주광역시'].copy()
+gwangju.index = pd.to_datetime(gwangju.index, format='%Y.%m')
+gwangju.sort_index(inplace=True)
+
+# ✅ 3. 월별 이동 추이 그래프 (연도별 선 그래프)
+gwangju_df = gwangju.to_frame(name='전입자 수')
+gwangju_df['년도'] = gwangju_df.index.year
+gwangju_df['월'] = gwangju_df.index.month
+pivot_df = gwangju_df.pivot(index='월', columns='년도', values='전입자 수')
+
+plt.figure(figsize=(12, 6))
+sns.lineplot(data=pivot_df, markers=True, dashes=False)  # <-- 실선으로 고정
+plt.title('광주광역시 월별 시군구간 전입자 수 (연도별)')
+plt.xlabel('월')
+plt.ylabel('전입자 수')
+plt.xticks(range(1, 13))
+plt.grid(True)
+plt.tight_layout()
+plt.show()
+
+# ✅ 4. 연도별 분기 평균 계산 및 출력
+gwangju_df['분기'] = gwangju_df['월'].apply(lambda m: f'{((m - 1)//3 + 1)}분기')
+quarterly_table = gwangju_df.groupby(['년도', '분기'])['전입자 수'].mean().unstack()
+print(" 광주광역시 연도별 분기 평균 전입자 수:")
+print(quarterly_table.round(1))
+
+# ✅ 5년간 전체 분기별 평균 계산
+total_quarter_avg = gwangju_df.groupby('분기')['전입자 수'].mean()
+print("\n 2020~2024년 전체 기준, 분기별 평균 전입자 수:")
+print(total_quarter_avg.round(1).sort_index())  # 정렬해서 깔끔하게 출력
+
+# ✅ 엑셀 파일 경로 (사용자 환경에 맞게 수정)
+file_path = r"C:\Users\user\Downloads\광주광역시_시군구_각세별_이동자수_시군구내.xlsx"
+
+# ✅ 1. 엑셀 시트 불러오기
+xls = pd.ExcelFile(file_path)
+df = xls.parse('데이터')
+
+# ✅ 엑셀 시트 불러오기 및 전처리
+xls = pd.ExcelFile(file_path)
+df = xls.parse('데이터')
+df_clean = df.iloc[1:].copy()
+df_clean.columns = ['행정구역별', '각세별', '2020', '2021', '2022', '2023', '2024']
+df_clean['행정구역별'] = df_clean['행정구역별'].ffill()
+df_clean['각세별'] = df_clean['각세별'].astype(str)
+
+# ✅ melt 후 나이 변환
+df_melted = df_clean.melt(id_vars=['행정구역별', '각세별'], var_name='년도', value_name='이동자수')
+df_melted['이동자수'] = pd.to_numeric(df_melted['이동자수'], errors='coerce')
+df_melted['나이'] = df_melted['각세별'].str.replace('세', '', regex=False).astype(int)
+
+# ✅ 0~19세 필터링
+df_filtered = df_melted[df_melted['나이'].between(0, 19)]
+# ✅ 시각화: 선명한 색상 팔레트 지정 ("tab10"은 10개 기본색으로 구분 뚜렷)
+custom_palette = sns.color_palette("tab10", n_colors=df_filtered['행정구역별'].nunique())
+
+
+# ✅ 시각화: 각 나이를 x축으로 세부 표시
+sns.set(style="whitegrid", font="Malgun Gothic", rc={"axes.unicode_minus": False})
+g = sns.FacetGrid(df_filtered, 
+                  col="년도", 
+                  hue="행정구역별", 
+                  col_wrap=3, 
+                  height=4, 
+                  sharey=False)
+
+g.map(sns.lineplot, "나이", "이동자수", marker='o')  # 선 + 점
+
+# ✅ x축 눈금: 0~19세까지 하나씩 모두 보이게
+for ax in g.axes.flat:
+    ax.set_xticks(range(0, 20))
+    ax.set_xticklabels(range(0, 20), rotation=45)
+
+g.add_legend(title='행정구역')
+g.set_titles("{col_name}년")
+plt.subplots_adjust(top=0.9)
+g.fig.suptitle("광주광역시 0~19세 연령별 시군구 간 전입자 수 추이 (2020~2024)", fontsize=14)
+plt.show()
+
+#%%
+# ✅ 1. 엑셀 파일 불러오기
+file_path = r"C:\Users\user\Downloads\시군구별_이동자수_시군구내.xlsx"
+df = pd.read_excel(file_path, sheet_name='데이터')
+df_clean = df.iloc[1:].copy()
+df_clean.reset_index(drop=True, inplace=True)
+# ✅ 2. 부산 데이터만 정제
+df_melted = df_clean.set_index('행정구역(시군구)별')
+df_melted = df_melted.apply(pd.to_numeric)
+ulsan = df_melted.loc['울산광역시'].copy()
+ulsan.index = pd.to_datetime(ulsan.index, format='%Y.%m')
+ulsan.sort_index(inplace=True)
+
+# ✅ 3. 월별 이동 추이 그래프 (연도별 선 그래프)
+ulsan_df = ulsan.to_frame(name='전입자 수')
+ulsan_df['년도'] = ulsan_df.index.year
+ulsan_df['월'] = ulsan_df.index.month
+pivot_df = ulsan_df.pivot(index='월', columns='년도', values='전입자 수')
+
+plt.figure(figsize=(12, 6))
+sns.lineplot(data=pivot_df, markers=True, dashes=False)  # <-- 실선으로 고정
+plt.title('울산광역시 월별 시군구간 전입자 수 (연도별)')
+plt.xlabel('월')
+plt.ylabel('전입자 수')
+plt.xticks(range(1, 13))
+plt.grid(True)
+plt.tight_layout()
+plt.show()
+
+# ✅ 4. 연도별 분기 평균 계산 및 출력
+ulsan_df['분기'] = ulsan_df['월'].apply(lambda m: f'{((m - 1)//3 + 1)}분기')
+quarterly_table = ulsan_df.groupby(['년도', '분기'])['전입자 수'].mean().unstack()
+print(" 울산광역시 연도별 분기 평균 전입자 수:")
+print(quarterly_table.round(1))
+
+# ✅ 5년간 전체 분기별 평균 계산
+total_quarter_avg = ulsan_df.groupby('분기')['전입자 수'].mean()
+print("\n 2020~2024년 전체 기준, 분기별 평균 전입자 수:")
+print(total_quarter_avg.round(1).sort_index())  # 정렬해서 깔끔하게 출력
+# ✅ 엑셀 파일 경로 (사용자 환경에 맞게 수정)
+file_path = r"C:\Users\user\Downloads\울산광역시_시군구_각세별_이동자수_시군구내.xlsx"
+
+# ✅ 1. 엑셀 시트 불러오기
+xls = pd.ExcelFile(file_path)
+df = xls.parse('데이터')
+
+# ✅ 엑셀 시트 불러오기 및 전처리
+xls = pd.ExcelFile(file_path)
+df = xls.parse('데이터')
+df_clean = df.iloc[1:].copy()
+df_clean.columns = ['행정구역별', '각세별', '2020', '2021', '2022', '2023', '2024']
+df_clean['행정구역별'] = df_clean['행정구역별'].ffill()
+df_clean['각세별'] = df_clean['각세별'].astype(str)
+
+# ✅ melt 후 나이 변환
+df_melted = df_clean.melt(id_vars=['행정구역별', '각세별'], var_name='년도', value_name='이동자수')
+df_melted['이동자수'] = pd.to_numeric(df_melted['이동자수'], errors='coerce')
+df_melted['나이'] = df_melted['각세별'].str.replace('세', '', regex=False).astype(int)
+
+# ✅ 0~19세 필터링
+df_filtered = df_melted[df_melted['나이'].between(0, 19)]
+# ✅ 시각화: 선명한 색상 팔레트 지정 ("tab10"은 10개 기본색으로 구분 뚜렷)
+custom_palette = sns.color_palette("tab10", n_colors=df_filtered['행정구역별'].nunique())
+
+
+# ✅ 시각화: 각 나이를 x축으로 세부 표시
+sns.set(style="whitegrid", font="Malgun Gothic", rc={"axes.unicode_minus": False})
+g = sns.FacetGrid(df_filtered, 
+                  col="년도", 
+                  hue="행정구역별", 
+                  col_wrap=3, 
+                  height=4, 
+                  sharey=False)
+
+g.map(sns.lineplot, "나이", "이동자수", marker='o')  # 선 + 점
+
+# ✅ x축 눈금: 0~19세까지 하나씩 모두 보이게
+for ax in g.axes.flat:
+    ax.set_xticks(range(0, 20))
+    ax.set_xticklabels(range(0, 20), rotation=45)
+
+g.add_legend(title='행정구역')
+g.set_titles("{col_name}년")
+plt.subplots_adjust(top=0.9)
+g.fig.suptitle("울산광역시 0~19세 연령별 시군구 간 전입자 수 추이 (2020~2024)", fontsize=14)
+plt.show()
+
+#%%
+import pandas as pd
+from scipy.stats import ttest_ind
+
+# 파일 경로
+busan_path = r"C:\Users\user\Downloads\부산광역시_시군구_각세별_이동자수_시군구내.xlsx"
+incheon_path = r"C:\Users\user\Downloads\인천광역시_시군구_각세별_이동자수_시군구내.xlsx"
+
+# 공통 전처리 함수: 6세의 연도별 이동자 수 추출
+def extract_yearly_age6(filepath):
+    df = pd.read_excel(filepath, sheet_name="데이터")
+    df = df.iloc[1:].copy()
+    df.columns = ['행정구역별', '각세별', '2020', '2021', '2022', '2023', '2024']
+    df['행정구역별'] = df['행정구역별'].ffill()
+    df['각세별'] = df['각세별'].astype(str).str.replace('세', '', regex=False).astype(int)
+
+    # 6세 데이터만 필터링
+    df = df[df['각세별'] == 6]
+
+    # 연도별 이동자 수를 반환
+    return df[['2020', '2021', '2022', '2023', '2024']].astype(float).sum().values
+
+# 데이터 추출
+busan_6 = extract_yearly_age6(busan_path)
+incheon_6 = extract_yearly_age6(incheon_path)
+
+# t-검정
+t_stat, p_val = ttest_ind(busan_6, incheon_6, equal_var=False)
+
+t_stat, p_val, busan_6, incheon_6
+
+# 결과 정리 출력
+print(f"부산 (6세 연도별 전입자 수):   {list(busan_6)}")
+print(f"인천 (6세 연도별 전입자 수):   {list(incheon_6)}\n")
+
+print(f"t-statistic = {t_stat:.2f}")
+print(f"p-value     = {p_val:.4f}")
+
+if p_val < 0.05:
+    print("\n→ p-value = {:.4f} < 0.05 → 귀무가설을 기각합니다.".format(p_val))
+    print("→ 따라서 부산과 인천의 6세 아동 연도별 전입자 수는 통계적으로 유의미한 차이가 있습니다.")
+    if t_stat > 0:
+        print("→ t = {:.2f} 이 양수이므로, 부산이 인천보다 평균적으로 전입자 수가 더 많습니다.".format(t_stat))
+    else:
+        print("→ t = {:.2f} 이 음수이므로, 인천이 부산보다 평균적으로 전입자 수가 더 많습니다.".format(t_stat))
+else:
+    print("\n→ p-value = {:.4f} ≥ 0.05 → 귀무가설을 기각할 수 없습니다.".format(p_val))
+    print("→ 따라서 두 도시 간 6세 아동 연도별 전입자 수에는 통계적으로 유의미한 차이가 없습니다.")
+
+
+
+
